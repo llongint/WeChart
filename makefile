@@ -12,7 +12,7 @@ depends_h = $(wildcard  ./inc/*.h)				#找到所有的.h文件
 
 all: ${PROGS}
 
-serv:${depends_c} server.c
+serv:${depends_c} serv.c
 	${CC} ${CFLAGS} -o $@ $^ ${INC} ${LIBS}
 client:${depends_c} client.c
 	${CC} ${CFLAGS} -o $@ $^ ${INC} ${LIBS}
