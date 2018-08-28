@@ -90,7 +90,6 @@ bool init_pool(thread_pool *pool, unsigned int threads_number){
 			return false;
 		}
 	}
-
 	return true;
 }
 /**
@@ -228,12 +227,5 @@ void *print(void *arg){
 	printf("\rserv$ %s\n", (char *)arg);
     return ((void *)0);
 }
-
-
-
-
-
-
-
 
 

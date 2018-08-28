@@ -1,10 +1,26 @@
+/*
+ * @Author: hzq 
+ * @Date: 2018-08-27 21:23:40 
+ * @Last Modified by: hzq
+ * @Last Modified time: 2018-08-27 21:47:38
+ */
 #include	<limits.h>		/* for OPEN_MAX */
 #include    <sys/epoll.h>
 #include    <stdio.h>
 #include    <assert.h>
 #include    <stdlib.h>
 #include    "my_epoll.h"
+#include    "my_thread_pool.h"
 
+static thread_pool *s_pool=NULL;
+
+/** 
+ * @brief  
+ * @note   
+ * @param  argc: 
+ * @param  *argv[]: 
+ * @retval 
+ */
 int main(int argc,char *argv[]){
 
     int i=0;
@@ -12,6 +28,11 @@ int main(int argc,char *argv[]){
         printf("%s <port>\n",argv[0]);
         exit(0);
     }
+    if( file_init() == -1){
+        return -1;
+    }
+    s_pool = malloc(sizeof(thread_pool));
+	init_pool(s_pool,OPEN_MAX);
     int servfd;
 
     /* 1.创建服务 */
@@ -38,6 +59,6 @@ int main(int argc,char *argv[]){
             }
         }
     }
-    
+    destroy_pool(s_pool);
     return 0;
 }

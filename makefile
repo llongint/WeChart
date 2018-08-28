@@ -1,4 +1,4 @@
-PROGS = serv client
+PROGS = serv client test
 CFLAGS  = -Wall -g
 
 CC:=gcc
@@ -12,10 +12,14 @@ depends_h = $(wildcard  ./inc/*.h)				#找到所有的.h文件
 
 all: ${PROGS}
 
+
+test:${depends_c} test.c
+	${CC} ${CFLAGS} -o $@ $^ ${INC} ${LIBS}
 serv:${depends_c} serv.c
 	${CC} ${CFLAGS} -o $@ $^ ${INC} ${LIBS}
 client:${depends_c} client.c
 	${CC} ${CFLAGS} -o $@ $^ ${INC} ${LIBS}
+
 
 clean:
 	rm -f $(depends_o) $(PROGS)

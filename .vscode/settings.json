@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "my_epoll.h": "c"
+        "my_epoll.h": "c",
+        "my_thread_pool.h": "c",
+        "my_io.h": "c",
+        "rsa.h": "c"
     }
 }

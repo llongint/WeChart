@@ -25,20 +25,20 @@ struct task//任务结点
 	struct task *next;
 };
 
-typedef struct thread_pool//线程池头结点
+typedef struct thread_pool  //线程池头结点
 {
-	pthread_mutex_t lock; //互斥锁，用来保护这个"线程池"，就是保护这个链表的　
-	pthread_cond_t  cond; //　有任务的条件　
+	pthread_mutex_t lock;   //互斥锁，用来保护这个"线程池"，就是保护这个链表的　
+	pthread_cond_t  cond;   //　有任务的条件　
 
-	bool shutdown;  //是否退出。
+	bool shutdown;          //是否退出。
 
-	struct task *task_list;//任务链表，即指向第一个任务结点
+	struct task *task_list; //任务链表，即指向第一个任务结点
 
-	pthread_t *tids;//指向线程ID的数组，因为我可能会创建多个线程。
+	pthread_t *tids;        //指向线程ID的数组，因为我可能会创建多个线程。
 
 	unsigned max_waiting_tasks;//表示最大的执行的任务数
 	unsigned waiting_tasks; //目前正在链表上的任务数，即待执行任务
-	unsigned active_threads; //正在服役的线程数
+	unsigned active_threads;//正在服役的线程数
 }thread_pool;
 
 
