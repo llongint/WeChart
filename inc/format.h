@@ -16,7 +16,11 @@ struct MsgLen{
     unsigned int m_msgValueLen;
 }Msg;
 enum MessageType{
-    e_msgChart = 0x0001,    //聊天消息
+    e_msgRegister,          //注册
+    e_msgLogin,             //登录
+    e_msgLogout,            //注销
+    e_msgQuit,              //退出登录
+    e_msgChart,             //聊天消息
     e_msgLs,                //Ls命令
     e_msgGet,               //文件请求命令
     e_msgFileHead,          //文件头信息
@@ -29,8 +33,8 @@ enum MessageType{
     e_msgCd                 //cd命令，改变工作路径
 }messageType;
 
-
-
-
+int IsBigEndian();
+int uintToString(char *str,unsigned int num);
+int stringToUint(char *str,unsigned int *num);
 
 #endif

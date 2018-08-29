@@ -11,6 +11,8 @@
 #include <string.h>
 #include <limits.h>
 #include "rsa.h"
+#include "my_io.h"
+#include "assert.h"
 
 /**
  * Save some frequently used bigintegers (0 - 10) so they do not need to be repeatedly
@@ -39,8 +41,11 @@ bignum* bignum_init() {
 	return b;
 }
 
-/**
- * Free resources used by a bignum. Use judiciously to avoid memory leaks.
+/** 
+ * @brief  释放内存空间
+ * @note   
+ * @param  b: 大数结构体指针
+ * @retval None
  */
 void bignum_deinit(bignum* b) {
 	free(b->data);
@@ -121,15 +126,21 @@ void bignum_print(bignum* b) {
 				buffer = realloc(buffer, cap * sizeof(char));
 			}
 		}
-		for(i = len - 1; i >= 0; i--) printf("%d", buffer[i]);
+
+		for(i = len - 1; i >= 0; i--) 
+            printf("%d", buffer[i]);
 	}
 	bignum_deinit(copy);
 	bignum_deinit(remainder);
 	free(buffer);
 }
 
-/**
- * Check if two bignums are equal.
+/** 
+ * @brief  判断两个大数是否相等
+ * @note   
+ * @param  b1: 
+ * @param  b2: 
+ * @retval 
  */
 int bignum_equal(bignum* b1, bignum* b2) {
 	int i;
@@ -324,9 +335,13 @@ void bignum_idivide(bignum *source, bignum *div) {
 	bignum_deinit(r);
 }
 
-/**
- * Perform an in place divide of source, also producing a remainder.
- * source = source/div and remainder = source - source/div.
+/** 
+ * @brief  source = source/div and remainder = source - source/div.
+ * @note   
+ * @param  source:      被除数
+ * @param  div:         除数
+ * @param  remainder:   余数
+ * @retval None
  */
 void bignum_idivider(bignum* source, bignum* div, bignum* remainder) {
 	bignum *q = bignum_init(), *r = bignum_init();
@@ -337,8 +352,13 @@ void bignum_idivider(bignum* source, bignum* div, bignum* remainder) {
 	bignum_deinit(r);
 }
 
-/**
- * Calculate the remainder when source is divided by div.
+/** 
+ * @brief  功能同上
+ * @note   
+ * @param  source: 
+ * @param  *div: 
+ * @param  remainder: 
+ * @retval None
  */
 void bignum_remainder(bignum* source, bignum *div, bignum* remainder) {
 	bignum *q = bignum_init();
@@ -637,8 +657,12 @@ int solovayPrime(int a, bignum* n) {
 	return result;
 }
 
-/**
- * Test if n is probably prime, by repeatedly using the Solovay-Strassen primality test.
+/** 
+ * @brief  重复使用Solovay-Strassen测试 n 是否是素数
+ * @note   
+ * @param  n: 需要测试的数字
+ * @param  k: 
+ * @retval 
  */
 int probablePrime(bignum* n, int k) {
 	if(bignum_equal(n, &NUMS[2])) return 1;
@@ -752,11 +776,17 @@ void decode(bignum* c, bignum* d, bignum* n, bignum* result) {
 	bignum_modpow(c, d, n, result);
 }
 
-/**
- * Encode the message of given length, using the public key (exponent, modulus)
- * The resulting array will be of size len/bytes, each index being the encryption
- * of "bytes" consecutive characters, given by m = (m1 + m2*128 + m3*128^2 + ..),
- * encoded = m^exponent mod modulus
+/** 
+ * @brief  使用公钥加密给定长度的消息,结果数组的长度是 len/bytes,每个索引会被加密成 bytes
+ *          个连续的字符,m = (m1 + m2*128 + m3*128^2 + ..),
+ *          encoded = m^exponent mod modulus
+ * @note   
+ * @param  len: 待加密的字符串的长度
+ * @param  bytes: 每次加密bytes个字符
+ * @param  *message: 待加密的字符串
+ * @param  *exponent: e
+ * @param  *modulus: n
+ * @retval 加密后的数字 的首地址
  */
 bignum *encodeMessage(int len, int bytes, char *message, bignum *exponent, bignum *modulus) {
 	/* Calloc works here because capacity = 0 forces a realloc by callees but we should really
@@ -797,7 +827,9 @@ int *decodeMessage(int len, int bytes, bignum *cryptogram, bignum *exponent, big
 	bignum *x = bignum_init(), *remainder = bignum_init();
 	bignum *num128 = bignum_init();
 	bignum_fromint(num128, 128);
+    //printf("\ndecodeMessage\n");
 	for(i = 0; i < len; i++) {
+        printf("line:%d\n",__LINE__);
 		decode(&cryptogram[i], exponent, modulus, x);
 		for(j = 0; j < bytes; j++) {
 			bignum_idivider(x, num128, remainder);
@@ -817,16 +849,10 @@ int *decodeMessage(int len, int bytes, bignum *cryptogram, bignum *exponent, big
  *      On error, -1 is returned
  */
 int create_key(void){
-    int i, bytes, len;
 	bignum *p = bignum_init(), *q = bignum_init(), *n = bignum_init();
 	bignum *phi = bignum_init(), *e = bignum_init(), *d = bignum_init();
-	bignum *bbytes = bignum_init(), *shift = bignum_init();
 	bignum *temp1 = bignum_init(), *temp2 = bignum_init();
  	
-    bignum *encoded;
-	int *decoded;
-	char *buffer;
-
     /* 1.生成两个100位的大素数p */
 	randPrime(FACTOR_DIGITS, p);
 	randPrime(FACTOR_DIGITS, q);
@@ -846,8 +872,24 @@ int create_key(void){
     bignum_inverse(e, phi, d);
 
     int err = save_key(public_key,e,n);
+    assert(err != -1);
     err = save_key(private_key,d,n);
-
+    assert(err != -1);
+    
     srand(time(NULL));
+
+#ifndef NOPRINT
+	printf("key created!\n");
+#endif
+
+    bignum_deinit(p);
+	bignum_deinit(q);
+	bignum_deinit(n);
+	bignum_deinit(phi);
+	bignum_deinit(e);
+	bignum_deinit(d);
+	bignum_deinit(temp1);
+	bignum_deinit(temp2);
+    return 0;
 }
 
