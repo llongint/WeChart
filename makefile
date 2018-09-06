@@ -3,6 +3,7 @@ CFLAGS  = -Wall -g
 
 CC:=gcc
 LIBS += -pthread
+LIBS += -lm
 INC := -I ./
 INC +=-I ./inc
 

@@ -10,9 +10,15 @@
 #include <time.h>
 #include <string.h>
 #include <limits.h>
+#include <assert.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 #include "rsa.h"
 #include "my_io.h"
-#include "assert.h"
+#include "format.h"
 
 /**
  * Save some frequently used bigintegers (0 - 10) so they do not need to be repeatedly
@@ -829,7 +835,6 @@ int *decodeMessage(int len, int bytes, bignum *cryptogram, bignum *exponent, big
 	bignum_fromint(num128, 128);
     //printf("\ndecodeMessage\n");
 	for(i = 0; i < len; i++) {
-        printf("line:%d\n",__LINE__);
 		decode(&cryptogram[i], exponent, modulus, x);
 		for(j = 0; j < bytes; j++) {
 			bignum_idivider(x, num128, remainder);
@@ -893,3 +898,72 @@ int create_key(void){
     return 0;
 }
 
+/** 
+ * @brief  保存公钥或私钥
+ * @note   前面四个字节用小端模式表示长度,后跟具体数字
+ * @param  *filename: 
+ * @param  *e: 
+ * @param  *n: 
+ * @retval 成功返回0,失败返回-1
+ */
+int save_key(const char *filename,bignum *e,bignum *n)
+{    
+    int i=0;
+    char buf[sizeof(unsigned int)];
+    /* 不存在则创建文件 */
+    int fd = open(filename,O_WRONLY | O_TRUNC);
+    if(fd == -1){
+        perror("open file");
+        return -1;
+    }
+
+    uintToString(buf,(unsigned int)(e->length));
+    Write(fd,buf,sizeof(unsigned int));
+    uintToString(buf,(unsigned int)(n->length));
+    Write(fd,buf,sizeof(unsigned int));
+
+    for(i=0;i<e->length;i++){
+        uintToString(buf,e->data[i]);
+        Write(fd,buf,sizeof(unsigned int));
+    }
+    for(i=0;i<n->length;i++){
+        uintToString(buf,n->data[i]);
+        Write(fd,buf,sizeof(unsigned int));
+    }
+    close(fd);
+    return 0;
+}
+/** 
+ * @brief  读取密钥文件
+ * @note   
+ * @param  *filename: 密钥文件名
+ * @param  *e: 
+ * @param  *n: 
+ * @retval 
+ */
+int read_key(const char *filename,bignum *e,bignum *n)
+{
+    int i = 0;
+    char str[sizeof(unsigned int)];
+    /* 不存在则创建文件 */
+    int fd = open(filename,O_RDONLY);
+    if(fd == -1){
+        perror("open file");
+        return -1;
+    }
+    Read(fd,str,sizeof(unsigned int));
+    stringToUint(str,&(e->length));
+    Read(fd,str,sizeof(unsigned int));
+    stringToUint(str,&(n->length));
+    
+    for(i=0;i<e->length;i++){
+        Read(fd,str,sizeof(unsigned int));
+        stringToUint(str,&(e->data[i]));
+    }
+    for(i=0;i<e->length;i++){
+        Read(fd,str,sizeof(unsigned int));
+        stringToUint(str,&(n->data[i]));
+    }
+    close(fd);
+    return 0;
+}

@@ -1,9 +1,11 @@
-#include "my_signal.h"
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <signal.h>
 #include <stdio.h>
+
+#include "my_signal.h"
 
 void sig_chld(int signo){
     pid_t pid;

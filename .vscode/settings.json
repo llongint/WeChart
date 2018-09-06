@@ -3,6 +3,9 @@
         "my_epoll.h": "c",
         "my_thread_pool.h": "c",
         "my_io.h": "c",
-        "rsa.h": "c"
+        "rsa.h": "c",
+        "format.h": "c",
+        "my_socket.h": "c",
+        "login.h": "c"
     }
 }

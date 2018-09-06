@@ -1,6 +1,10 @@
-#include "format.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
+#include "format.h"
+
+struct MsgLen Msg = {sizeof(short),sizeof(unsigned int),sizeof(short)+sizeof(unsigned int)};
 
 /** 
  * @brief  判断主机字节序
@@ -22,13 +26,13 @@ int IsBigEndian(){
 
 /** 
  * @brief  格式化发送头
- * @note   
+ * @note   暂时没有考虑大小端问题
  * @param  *send_cmd:   数据首地址
  * @param  cmd_num:     命令编号
  * @param  packet_len:  数据包长度(不包括数据头)
  * @retval None
  */
-void  package_head(char *send_cmd,unsigned short cmd_num,unsigned int packet_len){
+void  head_package(char *send_cmd,unsigned short cmd_num,unsigned int packet_len){
     //unsigned short cmd_num=0x0002;
 	//unsigned int packet_len = sizeof(cmd_num)+sizeof(packet_len);
     //assert(sizeof(send_cmd)>=6);
@@ -46,6 +50,24 @@ void  package_head(char *send_cmd,unsigned short cmd_num,unsigned int packet_len
 	send_cmd[i++] = (packet_len >> 8 ) & 0xff;
 	send_cmd[i++] = (packet_len >> 16) & 0xff;
 	send_cmd[i++] = (packet_len >> 24) & 0xff;
+}
+/** 
+ * @brief  解析包头
+ * @note   暂时没有考虑大小端问题
+ * @param  *p: 
+ * @param  *cmd_num: 
+ * @param  *packet_len: 
+ * @retval None
+ */
+void head_analyze(char *p,unsigned short *cmd_num,unsigned int *packet_len)
+{
+    assert(p != NULL);
+
+    *cmd_num=(p[0]&0xff) | ((p[1]<<8)&0xff);
+    *packet_len= (p[2]&0xff)                 | 
+                ( (p[3]<<8)&0xff00  )       |
+                ((p[4]<<16)&0xff0000  )     |
+                ((p[5]<<24)&0xff000000);
 }
 /** 
  * @brief  把一个 unsigned int 数转化为小端模式字符串存放

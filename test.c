@@ -13,49 +13,14 @@
 #include <error.h>
 #include <errno.h>
 #include <string.h>
-#include "format.h"
-#include "rsa.h"
-#include "my_io.h"
+
 
 int main()
 {
-    int  i,len,bytes;
-    char buffer[100] = "this is a test string";
-    bignum *encoded;
-    int *decoded;
-    bignum *e = bignum_init(), *n = bignum_init(), *d = bignum_init();
-    bignum *bbytes = bignum_init(), *shift = bignum_init();
-
-    if( file_init() == -1){
-        return -1;
-    }
-    read_key(public_key,e,n);
-    read_key(private_key,d,n);
-    //bignum_print(n);
-    /* 计算在一个加密过程中能够加密的最大数字 */
-
-    bytes = -1;
-	bignum_fromint(shift, 1 << 7); /* 7 bits per char */
-	bignum_fromint(bbytes, 1);
-	while(bignum_less(bbytes, n)) {
-        /* Shift by one byte, NB: we use bitmask representative so this can actually be a shift... */
-		bignum_imultiply(bbytes, shift);
-		bytes++;
-	}
-
-    len = strlen(buffer);
-    do {
-		buffer[len] = '\0';
-		len++;
-	}while(len % bytes != 0);
-
-    //printf("len = %d,bytes = %d\n",strlen(buffer),bytes);
-    encoded = encodeMessage(len, bytes, buffer, e, n);
-    decoded = decodeMessage(len/bytes, bytes, encoded, d, n);
-
-    for(i = 0; i < len/bytes; i++) free(encoded[i].data);
-    free(encoded);
-	free(decoded);
+    // char str[100]={0};
+    // create_rand_num(20,str);
+    // str[20]=0;
+    // printf("str = %s\n",str);
     return 0;
 }
 

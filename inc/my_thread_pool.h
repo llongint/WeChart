@@ -1,15 +1,9 @@
 #ifndef _THREAD_POOL_H_
 #define _THREAD_POOL_H_
 
-#include <stdio.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
 
-#include <errno.h>
 #include <pthread.h>
+#include <sys/epoll.h>
 
 #define MAX_WAITING_TASKS	1000
 #define MAX_ACTIVE_THREADS	20
@@ -17,11 +11,23 @@
 #define BUFSIZE			100
 #define PATHSIZE		100
 
+#ifndef bool
+#define bool char
+#endif // !bool
+
+#ifndef ture
+#define ture 1
+#endif // !true
+
+#ifndef false
+#define false 0
+#endif // !false
+
 struct task//任务结点
 {
-	void *(*do_task)(void *arg); //函数指针，指向任务要执行的函数
-	void *arg;  //一个指针，任务执行函数时作业函数的参数传入
-
+	int (*do_task)(int epfd,struct epoll_event *events); //函数指针，指向任务要执行的函数
+	int epfd;  //一个指针，任务执行函数时作业函数的参数传入
+    struct epoll_event *events;
 	struct task *next;
 };
 
@@ -43,12 +49,12 @@ typedef struct thread_pool  //线程池头结点
 
 
 bool init_pool(thread_pool *pool, unsigned int threads_number);
-bool add_task(thread_pool *pool, void *(*do_task)(void *arg), void *task);
+bool add_task(thread_pool *pool, int (*do_task)(int epfd,struct epoll_event *events),
+                                 int epfd,struct epoll_event *events);
 int  add_thread(thread_pool *pool, unsigned int additional_threads_number);
 int  remove_thread(thread_pool *pool, unsigned int removing_threads_number);
 bool destroy_pool(thread_pool *pool);
-void *print(void *arg);
 void *routine(void *arg);//任务执行函数
-
+void handler(void *arg);
 
 #endif

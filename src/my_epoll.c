@@ -12,6 +12,10 @@
 #include <assert.h>
 
 #include "my_epoll.h"
+#include "my_io.h"
+#include "format.h"
+#include "login.h"
+#include "my_socket.h"
 
 unsigned int current_connect=0;
 static const int s_listenEq = 1024;//最大等待连接队列
@@ -40,7 +44,7 @@ int epollAccept(int epfd,int servfd){
         current_connect+=1;
         
         ev.data.fd = clientfd;
-        ev.events = EPOLLIN | EPOLLET;
+        ev.events = EPOLLRDHUP |EPOLLIN | EPOLLET;
         epoll_ctl(epfd,EPOLL_CTL_ADD,clientfd,&ev);
     }
     return clientfd;
@@ -125,9 +129,10 @@ int epollRead(int epfd,struct epoll_event *events){
     bzero(buf,MAX_MESSAGE_SIZE);
     
     /* 1.对端发送FIN后，还向这个套接字写会受到RST */
-    if ( (count = read(sockfd, buf, MAX_MESSAGE_SIZE)) < 0) {
-        if (errno == ECONNRESET) {
+    if ( (count = read(sockfd, buf, Msg.m_msgLen)) < 0) {
+        if (errno == ECONNRESET){
             epoll_ctl(epfd,EPOLL_CTL_DEL,sockfd,&ev);
+            del_onlineUser(findUserBysockfd(sockfd));
             close(sockfd);
             current_connect--;
             events->data.fd = -1;
@@ -137,18 +142,33 @@ int epollRead(int epfd,struct epoll_event *events){
     }
     /* 2.对方发送了FIN,服务器读会返回0，应答后处于CLOSE_WAIT状态 */
     else if (count == 0){
+        printf("a user closed\n");
         epoll_ctl(epfd,EPOLL_CTL_DEL,sockfd,&ev);
+        del_onlineUser(findUserBysockfd(sockfd));
         close(sockfd);
         current_connect--;
         events->data.fd = -1;
         return -3;
     }
-    /* 3.正常读数据 */
-    buf[count]=0;           //添加结束符
-    printf("recv :%s",buf); //打印接收的数据
+    /* 3.没有读到6个字节 */
+    else if(count < 6){
+        return -1;
+    }
+
+    /* 4.正常读数据 */
+    unsigned short cmd_num = 0;
+    unsigned int packet_len = 0;
+    head_analyze(buf,&cmd_num,&packet_len);
+    count = Read(events->data.fd, buf, packet_len);
+    if(count < packet_len){
+        printf("read failed!\n");
+        return -1;
+    }
+    delServerRecv(events->data.fd,cmd_num,packet_len,buf);
     
     return 0;
 }
+
 
 
 

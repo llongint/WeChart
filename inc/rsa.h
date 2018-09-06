@@ -60,6 +60,9 @@ int *decodeMessage(int len, int bytes, bignum *cryptogram, bignum *exponent, big
 void bignum_fromstring(bignum* b, char* string);
 void bignum_fromint(bignum* b, unsigned int num);
 int create_key(void);
+
+int save_key(const char *filename,bignum *e,bignum *n);
+int read_key(const char *filename,bignum *e,bignum *n);
 /**
  * Save some frequently used bigintegers (0 - 10) so they do not need to be repeatedly
  * created. Used as, NUMS[5] = bignum("5"), etc..

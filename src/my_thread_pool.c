@@ -1,5 +1,13 @@
-#include "my_thread_pool.h"
 
+#include <stdio.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <errno.h>
+
+#include "my_thread_pool.h"
 /**
  * @function:线程清理函数，防止线程带锁退出
  */
@@ -7,9 +15,11 @@ void handler(void *arg){
 	pthread_mutex_unlock((pthread_mutex_t *)arg);//解锁
 }
 
-/**
- * @function:任务执行函数
- * @param arg:函数参数
+/** 
+ * @brief  任务执行函数
+ * @note   
+ * @param  *arg: 函数参数
+ * @retval None
  */
 void *routine(void *arg){
 
@@ -44,8 +54,9 @@ void *routine(void *arg){
 		pthread_cleanup_pop(0);
 
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-		(p->do_task)(p->arg);
+		(p->do_task)(p->epfd,p->events);
 		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        
         if(p != NULL){
 		    free(p);
             p=NULL;
@@ -55,12 +66,15 @@ void *routine(void *arg){
 	pthread_exit(NULL);
 }
 
-/**
- * @function:初始化线程池链表，并一个创建线程来运行线程池管理函数
- * @param pool:指向要初始化的线程池
- * @param threads_number:线程里常驻线程数
+/** 
+ * @brief  初始化线程池链表，并一个创建线程来运行线程池管理函数
+ * @note   
+ * @param  *pool: 指向要初始化的线程池
+ * @param  threads_number: 线程里常驻线程数
+ * @retval 
  */
-bool init_pool(thread_pool *pool, unsigned int threads_number){
+bool init_pool(thread_pool *pool, unsigned int threads_number)
+{
 	pthread_mutex_init(&pool->lock, NULL);
 	pthread_cond_init(&pool->cond, NULL);
 
@@ -84,20 +98,24 @@ bool init_pool(thread_pool *pool, unsigned int threads_number){
 	int i;
     /* 创建active_threads个线程来运行任务执行函数 */
 	for(i=0; i < pool->active_threads; i++){
-		if(pthread_create(&((pool->tids)[i]), NULL,
-					routine, (void *)pool) != 0){
+		if(pthread_create(&((pool->tids)[i]), NULL,routine, (void *)pool) != 0){
 			perror("create threads error");
 			return false;
 		}
 	}
 	return true;
 }
-/**
- * @function:添加任务
- * @param pool:线程池结构地址
- * @param do_task():函数指针
+/** 
+ * @brief  添加任务
+ * @note   
+ * @param  *pool: 线程池结构地址
+ * @param  do_task: 函数指针
+ * @param  epfd:
+ * @param  events:
+ * @retval 
  */
-bool add_task(thread_pool *pool,void *(*do_task)(void *arg), void *arg){
+bool add_task(thread_pool *pool,int (*do_task)(int epfd,struct epoll_event *events), int epfd, struct epoll_event *events)
+{
 	/* 1.创建新的任务结点 */
     struct task *new_task = malloc(sizeof(struct task));
 	if(new_task == NULL){
@@ -107,7 +125,8 @@ bool add_task(thread_pool *pool,void *(*do_task)(void *arg), void *arg){
 
     /* 2.给新的任务结点赋值 */
 	new_task->do_task = do_task;  
-	new_task->arg = arg;
+	new_task->epfd = epfd;
+    new_task->events = events;
 	new_task->next = NULL;
 
 	pthread_mutex_lock(&pool->lock);
@@ -223,9 +242,4 @@ bool destroy_pool(thread_pool *pool)
 
 	return true;
 }
-void *print(void *arg){
-	printf("\rserv$ %s\n", (char *)arg);
-    return ((void *)0);
-}
-
 

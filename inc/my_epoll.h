@@ -1,6 +1,7 @@
 #ifndef __MY_EPOLL_H
 #define __MY_EPOLL_H
 
+#include <sys/epoll.h>
 
 /* 最大消息长度 */
 #define MAX_MESSAGE_SIZE 1024
