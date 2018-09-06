@@ -68,6 +68,8 @@ int delClientInput(int sock,char *cmd)
 	}
     if (strncmp(cmd, "login", strlen("login")) == 0){
 		sendLoginCmd(sock, cmd);
+	}if (strncmp(cmd, "logout", strlen("logout")) == 0){
+		sendLogoutCmd(sock, cmd);
 	}else{
         //没有检查到关键词
         char send_cmd[MAX_MESSAGE_SIZE];
@@ -185,6 +187,28 @@ void sendLoginCmd(int sock, char *cmd)
     snprintf((char *)send_cmd+Msg.m_msgLen,MAX_MESSAGE_SIZE-Msg.m_msgLen-1,"%s",cmd);
     write(sock, send_cmd, Msg.m_msgLen+strlen(cmd)+1);      //发送结束符
 }
+/**
+ * @brief  注销账号
+ * @note   
+ * @param  sock: 
+ * @param  *cmd: 
+ * @retval None
+ */
+void sendLogoutCmd(int sock, char *cmd)
+{
+    char send_cmd[MAX_MESSAGE_SIZE];
+    bzero(send_cmd,MAX_MESSAGE_SIZE);
+    
+    printf("user name: ");
+    fgets(cmd,max_string_len,stdin);
+    printf("paswd: ");
+    fgets(cmd+strlen(cmd),max_string_len,stdin);
+
+    printf("waiting server return for Logout:\n");
+    head_package(send_cmd,e_msgLogout,strlen(cmd)+1);        //加上结束符
+    snprintf((char *)send_cmd+Msg.m_msgLen,MAX_MESSAGE_SIZE-Msg.m_msgLen-1,"%s",cmd);
+    write(sock, send_cmd, Msg.m_msgLen+strlen(cmd)+1);      //发送结束符
+}
 /** 
  * @brief  处理服务端接收的套接字数据
  * @note   
@@ -211,6 +235,13 @@ int delServerRecv(int sockfd,unsigned short cmd,unsigned int packet_len,char *bu
             //登录
             printf("login request\n");
             err = user_confirmation(sockfd,buf);    //ref g_userdata
+            printf("err = %d\n",err);
+            freeback2client(sockfd,err);
+            break;
+        case e_msgLogout:
+            //注销
+            printf("logout request\n");
+            err = user_logout(sockfd,buf);    //ref g_userdata
             printf("err = %d\n",err);
             freeback2client(sockfd,err);
             break;
@@ -245,6 +276,9 @@ void freeback2client(int sockfd,signed int err)
             break;
         case e_userOnline:
             snprintf(cmd,MAX_MESSAGE_SIZE,"%s","user is online,you can't login again\n");
+            break;
+        case e_LogoutSuccess:
+            snprintf(cmd,MAX_MESSAGE_SIZE,"%s","Logout success\n");
             break;
         default :
             return ;//其他错误就啥也不输出

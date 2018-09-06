@@ -48,6 +48,6 @@ int create_rand_num(int num,char *string);
 int create_rand_string(int num,char *string);
 int isUserExist(char *string);
 int isIdentificationExist(char *string);
-
+void save_userDatabylist(const char const *filename,struct User *p);
 
 #endif

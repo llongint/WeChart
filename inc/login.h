@@ -17,9 +17,11 @@ struct User_onLine  //线程池头结点
 extern struct User_onLine user_online;
 
 int user_confirmation(int sockfd,char *buf);
+int user_logout(int sockfd,char *buf);
 int send_session(int sockfd,char *p);
 int add_onlineUser(int sockfd,struct User *p);
 int del_onlineUser(struct User *p);
+int del_RegistUser(int sockfd,struct User *p);
 void print_onlineUser();
 struct User *findUserBysockfd(int sockfd);
 

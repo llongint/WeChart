@@ -153,6 +153,19 @@ int save_userData(const char *filename,char *data)
 
     return 0;
 }
+void save_userDatabylist(const char const *filename,struct User *p)
+{
+    char buf[MAX_MESSAGE_SIZE];
+    bzero(buf,MAX_MESSAGE_SIZE);
+    int fd = open(filename,O_WRONLY |O_TRUNC);
+    assert(fd != -1);
+    while(p!=NULL){
+        snprintf(buf,MAX_MESSAGE_SIZE,"%s\037%s\037%s\n",p->m_name,p->m_passwd,p->m_identification);
+        Write(fd,buf,strlen(buf));
+        p=p->next;
+    }
+}
+
 /** 
  * @brief  读用户的注册文件，并用保存保存到结构体 struct user
  * @note   

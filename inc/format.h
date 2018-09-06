@@ -47,6 +47,7 @@ enum ErrNum{
     e_UserOrPasswdWrong,    //用户名或密码错误
     e_loginSuccess,         //登录成功
     e_userOnline,           //用户已经在线，不能重复登录
+    e_LogoutSuccess,
     e_
 }errnum;
 

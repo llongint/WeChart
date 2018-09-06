@@ -55,6 +55,35 @@ int user_confirmation(int sockfd,char *buf)
     printf("end of user_confirmation\n");
     return e_UserOrPasswdWrong;
 }
+int user_logout(int sockfd,char *buf)
+{
+    printf("start of user_confirmation\n");
+    assert(g_userdata != NULL);
+    char *p1 = NULL,*p2 = NULL;
+    struct User *p = g_userdata;
+    p1 = strstr((const char *)buf,(const char *)"\n");
+    p2 = strstr((const char *)p1+1,  (const char *)"\n");
+    if(p1==NULL || p2==NULL || p1-buf >=32 || p2-p1 >= 32){
+        printf("logout format error\n");
+        return e_formatErr;
+    }
+    *p1 = '\0';
+    *p2 = '\0';
+    printf("buf = %s\n",buf);
+    printf("p1 = %s\n",p1);
+    while(p != NULL){
+        if(strlen(p->m_name) == strlen(buf) &&
+          strlen(p->m_passwd) ==strlen(p1+1)&& 
+          memcmp(p->m_name,buf,strlen(buf)) == 0 && 
+          memcmp(p->m_passwd,p1+1,strlen(p1+1)) == 0){
+            int err = del_RegistUser(sockfd,p);          
+            return err;
+        }
+        p=p->next;
+    }
+    printf("end of user_logout\n");
+    return e_UserOrPasswdWrong;
+}
 /**
  * @brief  发送session
  * @note   
@@ -125,6 +154,23 @@ int add_onlineUser(int sockfd,struct User *p)
     printf("login success,session has created\n"); 
     printf("end of add_onlineUser\n");
     return e_loginSuccess;
+}
+int del_RegistUser(int sockfd,struct User *p)
+{
+    struct User *p1 = g_userdata;
+    assert(p1!=NULL);
+    while(p1->next!=NULL){
+        if(p1->next == p){
+            del_onlineUser(p);
+            p1->next = p->next;
+            free(p);
+            p=NULL;
+            save_userDatabylist(userDataFile,g_userdata);
+            return e_LogoutSuccess;
+        }
+        p1=p1->next;
+    }
+    return 0;
 }
 /**
  * @brief   从在线列表中删除某个用户

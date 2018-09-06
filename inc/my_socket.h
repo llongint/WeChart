@@ -14,8 +14,8 @@ int delClientRecv(unsigned short cmd,unsigned int packet_len,char *buf);
 int redClientRecv(int sockfd);
 void sendRegisterCmd(int sock, char *cmd);
 void sendLoginCmd(int sock, char *cmd);
+void sendLogoutCmd(int sock, char *cmd);
 void freeback2client(int sockfd,signed int err);
-
 
 
 #endif
