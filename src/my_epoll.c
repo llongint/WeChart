@@ -132,7 +132,7 @@ int epollRead(int epfd,struct epoll_event *events){
     if ( (count = read(sockfd, buf, Msg.m_msgLen)) < 0) {
         if (errno == ECONNRESET){
             epoll_ctl(epfd,EPOLL_CTL_DEL,sockfd,&ev);
-            del_onlineUser(findUserBysockfd(sockfd));
+            del_onlineUser(findUserBysockfd(sockfd,g_servUserdata));
             close(sockfd);
             current_connect--;
             events->data.fd = -1;
@@ -144,7 +144,7 @@ int epollRead(int epfd,struct epoll_event *events){
     else if (count == 0){
         printf("a user closed\n");
         epoll_ctl(epfd,EPOLL_CTL_DEL,sockfd,&ev);
-        del_onlineUser(findUserBysockfd(sockfd));
+        del_onlineUser(findUserBysockfd(sockfd,g_servUserdata));
         close(sockfd);
         current_connect--;
         events->data.fd = -1;

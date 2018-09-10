@@ -19,7 +19,7 @@
 static thread_pool *s_pool=NULL;
 
 /** 
- * @brief  
+ * @brief  创建监听套接子，使用epoll()监听，
  * @note   
  * @param  argc: 
  * @param  *argv[]: 
@@ -32,7 +32,7 @@ int main(int argc,char *argv[]){
         printf("%s <port>\n",argv[0]);
         exit(0);
     }
-    if( file_init() == -1){
+    if( file_init(g_work_path,serv_public_key,serv_private_key,&g_servUserdata,serv_userDataFile) == -1){
         return -1;
     }
     s_pool = malloc(sizeof(thread_pool));
@@ -52,20 +52,20 @@ int main(int argc,char *argv[]){
         for(i=0;i<nfd;i++){
             /* 如果是servfd可读，即有新的连接，服务器处于SYN_RCVD状态 */
             if(events[i].data.fd == servfd){
-                /* 接受连接，服务器状态变为：ESTABLISHED */
+                /* 接受连接，服务器状态变为: ESTABLISHED */
                 epollAccept(epfd,servfd);
             }else if(events[i].events&EPOLLIN){     //如果是可读事件
                 add_task(s_pool,epollRead,epfd,&events[i]);
             }else if(events[i].events&EPOLLRDHUP){  //如果对端关闭连接
                 printf("a user closed\n");
                 epoll_ctl(epfd,EPOLL_CTL_DEL,events[i].data.fd,&ev);
-                del_onlineUser(findUserBysockfd(events[i].data.fd));
+                del_onlineUser(findUserBysockfd(events[i].data.fd,g_servUserdata));
                 close(events[i].data.fd);
                 current_connect--;
                 events->data.fd = -1;
             }else{
                 printf("fd = %d\n",events[i].data.fd);
-                printf("没有理由运行到这里！\n");
+                printf("unknow error\n");
             }
         }
     }

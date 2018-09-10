@@ -6,6 +6,7 @@
         "rsa.h": "c",
         "format.h": "c",
         "my_socket.h": "c",
-        "login.h": "c"
+        "login.h": "c",
+        "chat.h": "c"
     }
 }

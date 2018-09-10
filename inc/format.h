@@ -24,6 +24,7 @@ enum MessageType{
     e_msgLogin,             //登录
     e_msgSession,           //session
     e_msgLogout,            //注销
+    e_msgAddFriend,         //添加好友，要求知道对方的姓名和QQ号
     e_msgDebug,             //debug阶段用的一个消息类型
     e_msgQuit,              //退出登录
     e_msgChart,             //聊天消息

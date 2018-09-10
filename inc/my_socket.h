@@ -16,6 +16,7 @@ void sendRegisterCmd(int sock, char *cmd);
 void sendLoginCmd(int sock, char *cmd);
 void sendLogoutCmd(int sock, char *cmd);
 void freeback2client(int sockfd,signed int err);
-
+int save_session(char *buf);
+void sendAddFriend(int sock, char *cmd);
 
 #endif

@@ -59,8 +59,8 @@ bignum *encodeMessage(int len, int bytes, char *message, bignum *exponent, bignu
 int *decodeMessage(int len, int bytes, bignum *cryptogram, bignum *exponent, bignum *modulus);
 void bignum_fromstring(bignum* b, char* string);
 void bignum_fromint(bignum* b, unsigned int num);
-int create_key(void);
 
+int create_key(const char const *public_key,const char const *private_key);
 int save_key(const char *filename,bignum *e,bignum *n);
 int read_key(const char *filename,bignum *e,bignum *n);
 /**

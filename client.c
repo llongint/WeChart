@@ -21,6 +21,7 @@
 #include "my_socket.h"
 #include "my_signal.h"
 #include "my_epoll.h"
+#include "my_io.h"
 #include "rsa.h"
 
 int main(int argc,char *argv[]){
@@ -28,6 +29,10 @@ int main(int argc,char *argv[]){
     if(argc<2){
         printf("./%s [ip] [port]\n",argv[0]);
         exit(0);
+    }
+    
+    if( file_init(g_work_path,cli_public_key,cli_private_key,&g_cliUserdata,cli_userDataFile) == -1){
+        return -1;
     }
     int sockfd = connect_serv(servIp,atoi(argv[1]));
     assert(sockfd != -1);

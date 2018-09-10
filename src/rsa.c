@@ -853,7 +853,8 @@ int *decodeMessage(int len, int bytes, bignum *cryptogram, bignum *exponent, big
  *      On  success,  these  calls return a nonnegative number
  *      On error, -1 is returned
  */
-int create_key(void){
+int create_key(const char const *public_key,const char const *private_key)
+{
 	bignum *p = bignum_init(), *q = bignum_init(), *n = bignum_init();
 	bignum *phi = bignum_init(), *e = bignum_init(), *d = bignum_init();
 	bignum *temp1 = bignum_init(), *temp2 = bignum_init();

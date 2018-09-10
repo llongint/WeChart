@@ -22,6 +22,7 @@
 #include "format.h"
 #include "my_epoll.h"
 #include "login.h"
+#include "chat.h"
 
 //服务器端ip
 const char const *servIp = "139.199.172.253";
@@ -63,13 +64,22 @@ int connect_serv(const char const *ip,short port)
  */
 int delClientInput(int sock,char *cmd)
 {
-    if (strncmp(cmd, "regist", strlen("regist")) == 0){
+    if(strncmp(cmd, "regist", strlen("regist")) == 0){
 		sendRegisterCmd(sock, cmd);
-	}
-    if (strncmp(cmd, "login", strlen("login")) == 0){
+	}else if(strncmp(cmd, "login", strlen("login")) == 0){
 		sendLoginCmd(sock, cmd);
-	}if (strncmp(cmd, "logout", strlen("logout")) == 0){
+	}else if(strncmp(cmd, "logout", strlen("logout")) == 0){
 		sendLogoutCmd(sock, cmd);
+	}else if(strncmp(cmd, "list", strlen("list")) == 0){
+		print_userData(g_cliUserdata);
+	}else if(strncmp(cmd, "add f", strlen("add f")) == 0){
+		sendAddFriend(sock,cmd);
+	}else if(strncmp(cmd, "talk2", strlen("talk2")) == 0){
+		changeChat(&g_cliUserdata,cmd+strlen("talk2"));
+	}else if(strncmp(cmd, "--->", strlen("--->")) == 0){
+		sendChatMessage(sock,cmd+strlen("--->"));
+	}else if(strncmp(cmd, "pwd", strlen("pwd")) == 0){
+		system("pwd");
 	}else{
         //没有检查到关键词
         char send_cmd[MAX_MESSAGE_SIZE];
@@ -119,6 +129,7 @@ int redClientRecv(int sockfd)
     head_analyze(buf,&cmd_num,&packet_len);
     count = Read(sockfd, buf, packet_len);
     if(count < packet_len){
+        print("count = %d,packet_len = %d\n",count,packet_len);
         printf("read failed!\n");
         exit(0);
         return -1;
@@ -127,18 +138,69 @@ int redClientRecv(int sockfd)
     
     return err;
 }
+/**
+ * @brief  处理客户端接收的数据
+ * @note   
+ * @param  cmd: 
+ * @param  packet_len: 
+ * @param  *buf: 
+ * @retval 
+ */
 int delClientRecv(unsigned short cmd,unsigned int packet_len,char *buf)
 {
-    //signed int err = 0;
+    signed int err = 0;
     printf("cmd num = %d\n",cmd);
     switch (cmd){
         case e_msgDebug:
             printf("recv: %s",buf);
             break;
+        case e_msgSession:
+            err = save_session(buf);
+            assert(err == 0);
+            print("login success,session has saved");
+            break;
+        case e_msgAddFriend:
+            err = add_friend(cli_userDataFile,&g_cliUserdata,buf);
+            break;
         default:
             printf("unknow cmd\n");
             return -1;
     }
+    return 0;
+}
+/**
+ * @brief  解析字符串: hzq\n88652751513\n[˘'e종*\n
+ * @note   
+ * @param  *buf: 
+ * @retval 
+ */
+int save_session(char *buf)
+{
+    print("begin of %s\n",__FUNCTION__);
+  
+    char *p1 = NULL,*p2 = NULL;
+    p1 = strstr((const char *)buf,(const char *)"\n");
+    p2 = strstr((const char *)p1+1,  (const char *)"\n");
+    
+    if(p1==NULL || p2==NULL || p1-buf >=32 || p2-p1 >= 32||p2-p1<=1){
+        printf("format error\n");
+        return e_formatErr;
+    }
+    assert(g_cliUserdata!=NULL);
+    memcpy(g_cliUserdata->m_session,p2+1,max_string_len);
+
+
+    *p2='\0';
+    char path[MAX_MESSAGE_SIZE];
+    snprintf(path,MAX_MESSAGE_SIZE,"%s/%s",g_work_path,p1+1);
+    print("path: %s\n",path);
+    file_init(path,cli_public_key,cli_private_key,&g_cliUserdata,cli_userDataFile);
+
+
+    *p2='\n';
+    add_friend(cli_userDataFile,&g_cliUserdata,buf);
+    
+    print("end of %s\n",__FUNCTION__);
     return 0;
 }
 /** 
@@ -187,6 +249,23 @@ void sendLoginCmd(int sock, char *cmd)
     snprintf((char *)send_cmd+Msg.m_msgLen,MAX_MESSAGE_SIZE-Msg.m_msgLen-1,"%s",cmd);
     write(sock, send_cmd, Msg.m_msgLen+strlen(cmd)+1);      //发送结束符
 }
+void sendAddFriend(int sock, char *cmd)
+{
+    char send_cmd[MAX_MESSAGE_SIZE];
+    bzero(send_cmd,MAX_MESSAGE_SIZE);
+    
+    printf("friend's name: ");
+    fgets(cmd,max_string_len,stdin);
+    printf("friend's QQ: ");
+    fgets(cmd+strlen(cmd),max_string_len,stdin);
+
+    printf("waiting server return for add friend:\n");
+    head_package(send_cmd,e_msgAddFriend,strlen(cmd)+1);        //加上结束符
+    snprintf((char *)send_cmd+Msg.m_msgLen,MAX_MESSAGE_SIZE-Msg.m_msgLen-1,"%s",cmd);
+    write(sock, send_cmd, Msg.m_msgLen+strlen(cmd)+1);      //发送结束符
+    print("send: %s\n",send_cmd+6);
+    print("line:%d,end of the %s\n",__LINE__,__FUNCTION__);
+}
 /**
  * @brief  注销账号
  * @note   
@@ -228,22 +307,33 @@ int delServerRecv(int sockfd,unsigned short cmd,unsigned int packet_len,char *bu
         case e_msgRegist:
             //注册
             printf("regist request\n");
-            err = save_userData(userDataFile,buf);
+            err = save_userData(serv_userDataFile,&g_servUserdata,buf);
             freeback2client(sockfd,err);
             break;
         case e_msgLogin:
             //登录
             printf("login request\n");
-            err = user_confirmation(sockfd,buf);    //ref g_userdata
+            err = user_confirmation(sockfd,&g_servUserdata,buf);    //ref g_userdata
             printf("err = %d\n",err);
             freeback2client(sockfd,err);
             break;
         case e_msgLogout:
             //注销
             printf("logout request\n");
-            err = user_logout(sockfd,buf);    //ref g_userdata
+            err = user_logout(sockfd,&g_servUserdata,buf);    //ref g_userdata
             printf("err = %d\n",err);
             freeback2client(sockfd,err);
+            break;
+        case e_msgAddFriend:
+            //添加好友
+            printf("add friend request\n");
+            err = add_friend_request(sockfd,&g_servUserdata,buf);    //ref g_userdata
+            printf("err = %d\n",err);
+            freeback2client(sockfd,err);
+            break;
+        case e_msgChart:
+            print("char message:%s\n",buf+max_string_len);
+
             break;
         default:
             printf("unknow cmd\n");
@@ -251,6 +341,13 @@ int delServerRecv(int sockfd,unsigned short cmd,unsigned int packet_len,char *bu
     }
     return 0;
 }
+/**
+ * @brief  给客户端发送反馈信息
+ * @note   
+ * @param  sockfd: 连接套接字
+ * @param  err: 错误吗
+ * @retval None
+ */
 void freeback2client(int sockfd,signed int err)
 {
     char send_cmd[MAX_MESSAGE_SIZE];
@@ -283,7 +380,7 @@ void freeback2client(int sockfd,signed int err)
         default :
             return ;//其他错误就啥也不输出
     }
-    head_package(send_cmd,e_msgDebug,strlen(cmd)+1);        //加上结束符
+    head_package(send_cmd,e_msgDebug,strlen(cmd)+1);    //加上结束符
     snprintf((char *)send_cmd+Msg.m_msgLen,MAX_MESSAGE_SIZE-Msg.m_msgLen-1,"%s",cmd);
     write(sockfd, send_cmd, Msg.m_msgLen+strlen(cmd)+1);//发送结束符 
 }
